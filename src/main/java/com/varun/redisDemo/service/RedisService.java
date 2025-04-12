@@ -1,6 +1,6 @@
 package com.varun.redisDemo.service;
 
-import ch.qos.logback.core.util.TimeUtil;
+import com.varun.redisDemo.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -62,6 +63,58 @@ public class RedisService {
     }
 
     public Set<Object> getSortedSet(String key, double minScore, double maxScore) {
+        return redisTemplate.opsForZSet().rangeByScore(key, minScore, maxScore);
+    }
+
+    public void setUserString(String key, User user) {
+        redisTemplate.opsForValue().set(key, user);
+    }
+
+    public void setUserStringWithTTL(String key, User user, long timeout) {
+        redisTemplate.opsForValue().set(key, user, timeout, TimeUnit.SECONDS);
+    }
+
+    public User getUserString(String key) {
+        return (User) redisTemplate.opsForValue().get(key);
+    }
+
+    // 2. Hashes (User object as value)
+    public void setUserHash(String key, String field, User user) {
+        redisTemplate.opsForHash().put(key, field, user);
+    }
+
+    public User getUserHash(String key, String field) {
+        return (User) redisTemplate.opsForHash().get(key, field);
+    }
+
+    public Map<Object, Object> getAllUserHash(String key) {
+        return redisTemplate.opsForHash().entries(key);
+    }
+
+    // 3. Lists (User object)
+    public void addUserToList(String key, User user) {
+        redisTemplate.opsForList().rightPush(key, user);
+    }
+
+    public List<Object> getUserList(String key) {
+        return redisTemplate.opsForList().range(key, 0, -1);
+    }
+
+    // 4. Sets (User object)
+    public void addUserToSet(String key, User user) {
+        redisTemplate.opsForSet().add(key, user);
+    }
+
+    public Set<Object> getUserSet(String key) {
+        return redisTemplate.opsForSet().members(key);
+    }
+
+    // 5. Sorted Sets (User object with score)
+    public void addUserToSortedSet(String key, User user, double score) {
+        redisTemplate.opsForZSet().add(key, user, score);
+    }
+
+    public Set<Object> getUserSortedSet(String key, double minScore, double maxScore) {
         return redisTemplate.opsForZSet().rangeByScore(key, minScore, maxScore);
     }
 
