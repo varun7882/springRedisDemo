@@ -146,9 +146,9 @@ public class DataController {
     }
 
     @GetMapping("/user/set")
-    public ResponseEntity<Set<Object>> getUserSet(@RequestParam String key) {
-        Set<Object> set = redisService.getUserSet(key);
-        return ResponseEntity.ok(set.isEmpty() ? Set.of("Set empty or not found") : set);
+    public ResponseEntity<Set<User>> getUserSet(@RequestParam String key) {
+        Set<User> set = redisService.getUserSet(key);
+        return ResponseEntity.ok(set.isEmpty() ? Set.of(): set);
     }
 
     // 5. Sorted Sets (User object)
@@ -161,12 +161,19 @@ public class DataController {
     }
 
     @GetMapping("/user/sorted-set")
-    public ResponseEntity<Set<Object>> getUserSortedSet(@RequestParam String key,
+    public ResponseEntity<Set<User>> getUserSortedSet(@RequestParam String key,
                                                         @RequestParam double minScore,
                                                         @RequestParam double maxScore) {
-        Set<Object> sortedSet = redisService.getUserSortedSet(key, minScore, maxScore);
-        return ResponseEntity.ok(sortedSet.isEmpty() ? Set.of("Sorted set empty or not found") : sortedSet);
+        Set<User> sortedSet = redisService.getUserSortedSet(key, minScore, maxScore);
+        return ResponseEntity.ok(sortedSet.isEmpty() ? Set.of() : sortedSet);
     }
+    /* Need use cases for lua scripting in redis
+        1. A lua script that returns string
+        2. A lua script that returns boolean
+        3. A lua script that returns list
+        4. A lua script that returns map
+
+    */
 
     // Delete
     @DeleteMapping("/delete")

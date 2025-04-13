@@ -1,14 +1,17 @@
 package com.varun.redisDemo.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.varun.redisDemo.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -16,6 +19,9 @@ public class RedisService {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     // 1. Strings
     public void setString(String key, String value) {
@@ -105,8 +111,18 @@ public class RedisService {
         redisTemplate.opsForSet().add(key, user);
     }
 
-    public Set<Object> getUserSet(String key) {
-        return redisTemplate.opsForSet().members(key);
+    public Set<User> getUserSet(String key) {
+        Set<Object> set = redisTemplate.opsForSet().members(key);
+        System.out.println("fetched set is "+set);
+        if(set != null) {
+           Set<User> userSet = new HashSet<>();
+           for(Object obj:set) {
+               userSet.add(objectMapper.convertValue(obj,User.class));
+           }
+           return userSet;
+        } else {
+            return null;
+        }
     }
 
     // 5. Sorted Sets (User object with score)
@@ -114,8 +130,17 @@ public class RedisService {
         redisTemplate.opsForZSet().add(key, user, score);
     }
 
-    public Set<Object> getUserSortedSet(String key, double minScore, double maxScore) {
-        return redisTemplate.opsForZSet().rangeByScore(key, minScore, maxScore);
+    public Set<User> getUserSortedSet(String key, double minScore, double maxScore) {
+        Set<Object> userSet = redisTemplate.opsForZSet().rangeByScore(key, minScore, maxScore);
+        if(userSet != null) {
+            Set<User> res = new HashSet<>();
+            for(Object obj:userSet) {
+                res.add(objectMapper.convertValue(obj,User.class));
+            }
+            return res;
+        } else {
+            return null;
+        }
     }
 
     // Utility: Delete key (for cleanup or updates)
