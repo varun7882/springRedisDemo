@@ -1,15 +1,17 @@
 package com.varun.redisDemo.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.varun.redisDemo.model.GuessResult;
 import com.varun.redisDemo.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -80,8 +82,51 @@ public class RedisService {
         redisTemplate.opsForValue().set(key, user, timeout, TimeUnit.SECONDS);
     }
 
+    public void setUserRandomNumber(String key) {
+        int randomNumber = new Random().nextInt(100);
+        redisTemplate.opsForValue().set("no:"+key, randomNumber, 180, TimeUnit.SECONDS);
+    }
+
+    public GuessResult makeGuess(String userId, String guess) {
+        try {
+            // Load Lua script from resources
+            String scriptContent = StreamUtils.copyToString(
+                    new ClassPathResource("lua/check_guess.lua").getInputStream(), StandardCharsets.UTF_8);
+
+            DefaultRedisScript<List> redisScript = new DefaultRedisScript<>();
+            redisScript.setScriptText(scriptContent);
+            redisScript.setResultType(List.class);
+
+            // Execute Lua script
+            List<Object> result = redisTemplate.execute(
+                    redisScript,
+                    List.of("user:"+userId,"no:"+userId,"guess:"+userId),
+                    Integer.parseInt(guess)
+            );
+            for(Object obj:result) {
+                System.out.println("result from lua "+obj);
+            }
+            // Map result to GuessResult
+            GuessResult guessResult = new GuessResult();
+            guessResult.setUserId(String.valueOf(result.get(1)));
+            guessResult.setCorrect((Boolean) result.get(2));
+            guessResult.setGuesses(((List<?>) result.get(3)).stream()
+                    .map(String::valueOf)
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList()));
+            return guessResult;
+        } catch (Exception e) {
+            System.out.println("Error in execution "+e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+    public String getUserRandomNumber(String key) {
+        return (String) redisTemplate.opsForValue().get(key);
+    }
+
     public User getUserString(String key) {
-        return (User) redisTemplate.opsForValue().get(key);
+        Object obj = redisTemplate.opsForValue().get(key);
+        return objectMapper.convertValue(obj,User.class);
     }
 
     // 2. Hashes (User object as value)

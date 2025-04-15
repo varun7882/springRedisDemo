@@ -1,5 +1,6 @@
 package com.varun.redisDemo.controller;
 
+import com.varun.redisDemo.model.GuessResult;
 import com.varun.redisDemo.model.User;
 import com.varun.redisDemo.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,6 +100,24 @@ public class DataController {
         return ResponseEntity.ok("User string set with TTL: " + key + " (expires in " + timeout + "s)");
     }
 
+    @GetMapping("/user/startgame")
+    public ResponseEntity<String> setUserRandomNumber(@RequestParam String key) {
+        redisService.setUserRandomNumber(key);
+        return ResponseEntity.ok("User random number set with TTL: " + key + " (expires in " + 180 + "s)");
+    }
+
+    @GetMapping("/user/guess")
+    public ResponseEntity<String> getUserRandomNumber(@RequestParam String key) {
+        String correctGuess = redisService.getUserRandomNumber(key);
+        return ResponseEntity.ok("Correct guess is"+ correctGuess);
+    }
+
+    @GetMapping("/user/make-a-guess")
+    public ResponseEntity<GuessResult> getUserRandomNumber(@RequestParam String guess,@RequestParam String userId) {
+        GuessResult guessResult = redisService.makeGuess(userId, guess);
+        return ResponseEntity.ok(guessResult);
+    }
+
     @GetMapping("/user/string")
     public ResponseEntity<User> getUserString(@RequestParam String key) {
         User user = redisService.getUserString(key);
@@ -167,11 +186,34 @@ public class DataController {
         Set<User> sortedSet = redisService.getUserSortedSet(key, minScore, maxScore);
         return ResponseEntity.ok(sortedSet.isEmpty() ? Set.of() : sortedSet);
     }
-    /* Need use cases for lua scripting in redis
+    /*
+        Need use cases for lua scripting in redis
         1. A lua script that returns string
         2. A lua script that returns boolean
         3. A lua script that returns list
         4. A lua script that returns map
+        To cover all the things above , lets think of a game.
+        A guessing game, a random number x is generated (0<x<100) if user guesses that number in N guesses user wins
+        or else loses.
+        Redis entries per user for this game
+        userId -> random_number
+        userId -> user_object (this already created only user object needs to be modified to have max_guess_allowed)
+        userId -> guesses
+
+        There will be two APIs
+        1. generate a number
+            puts a random number in redis assigned to a user
+        2. make a guess
+            uses a lua script to fetch max_guess_allowed,current_guesses and generated number.
+            Check in lua script if guess is correct or not
+            If correct let lua return something equivalent to java object
+            GuessResult
+             int guesses_made
+             String userId
+             bool isCorrect
+             List<int> guesses
+            cache values are cleared
+            If incorrect same object is returned and guesses
 
     */
 

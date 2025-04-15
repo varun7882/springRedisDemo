@@ -4,8 +4,9 @@ import lombok.Data;
 
 @Data
 public class User {
-    private int id;
+    private String id;
     private String name;
     private String mobile;
+    private int maxGuessAllowed;
     private Home home;
 }
