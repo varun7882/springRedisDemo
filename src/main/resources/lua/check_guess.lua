@@ -24,14 +24,16 @@ if number == 0 then
     return redis.error_reply('Game not started')
 end
 
+local guesses = redis.call('LRANGE', guesses_key, 0, -1)
+local guesses_made = #guesses
 if guesses_made >= max_guesses then
     return redis.error_reply('Max guess made')
 end
 
 -- Add guess
 redis.call('LPUSH', guesses_key, guess)
-local guesses = redis.call('LRANGE', guesses_key, 0, -1)
-local guesses_made = #guesses
+redis.call('EXPIRE', guesses_key, 360)
+guesses = redis.call('LRANGE', guesses_key, 0, -1)
 
 redis.log(redis.LOG_NOTICE, 'processing ' .. tostring(max_guesses))
 

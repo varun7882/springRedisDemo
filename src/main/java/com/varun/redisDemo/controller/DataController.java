@@ -109,7 +109,7 @@ public class DataController {
     @GetMapping("/user/guess")
     public ResponseEntity<String> getUserRandomNumber(@RequestParam String key) {
         String correctGuess = redisService.getUserRandomNumber(key);
-        return ResponseEntity.ok("Correct guess is"+ correctGuess);
+        return ResponseEntity.ok("Correct guess is "+ correctGuess);
     }
 
     @GetMapping("/user/make-a-guess")

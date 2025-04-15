@@ -121,7 +121,7 @@ public class RedisService {
         }
     }
     public String getUserRandomNumber(String key) {
-        return (String) redisTemplate.opsForValue().get(key);
+        return String.valueOf(redisTemplate.opsForValue().get("no:"+key));
     }
 
     public User getUserString(String key) {
